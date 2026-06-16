@@ -1,0 +1,155 @@
+{
+  "suite": "pre-payment-guard-payload-v1",
+  "plugin": "payload (presidio-hardened-x402 PIIFilter, regex mode)",
+  "vectors": [
+    {
+      "id": "clean-admit",
+      "description": "pii_action=redact",
+      "config": {
+        "pii_action": "redact"
+      },
+      "declares": [
+        "resource_url",
+        "description",
+        "reason",
+        "extra"
+      ],
+      "input": {
+        "resource_url": "https://api.merchant.example/v1/invoice",
+        "description": "Monthly API access — tier 2",
+        "reason": "subscription renewal",
+        "extra": {
+          "order_id": "ord_8842"
+        }
+      },
+      "input_jcs": "{\"description\":\"Monthly API access — tier 2\",\"extra\":{\"order_id\":\"ord_8842\"},\"reason\":\"subscription renewal\",\"resource_url\":\"https://api.merchant.example/v1/invoice\"}",
+      "input_jcs_sha256": "914255936ff5678a4af3ca1f0be04f4185b595e5a68eaa3ffc7a7fab8e430506",
+      "expected": {
+        "verdict": "admit"
+      }
+    },
+    {
+      "id": "redact-description-ssn",
+      "description": "pii_action=redact",
+      "config": {
+        "pii_action": "redact"
+      },
+      "declares": [
+        "resource_url",
+        "description",
+        "reason",
+        "extra"
+      ],
+      "input": {
+        "resource_url": "https://api.merchant.example/v1/invoice",
+        "description": "Payout for customer SSN 219-09-9999",
+        "reason": "vendor settlement",
+        "extra": {
+          "order_id": "ord_8843"
+        }
+      },
+      "input_jcs": "{\"description\":\"Payout for customer SSN 219-09-9999\",\"extra\":{\"order_id\":\"ord_8843\"},\"reason\":\"vendor settlement\",\"resource_url\":\"https://api.merchant.example/v1/invoice\"}",
+      "input_jcs_sha256": "74e0b7d9265e5bf75c3e0f0fe0c65c17641946c10c3366e33e5e208563a37e09",
+      "expected": {
+        "verdict": "admit",
+        "entities": [
+          "US_SSN"
+        ],
+        "mutations": {
+          "description": "Payout for customer SSN <REDACTED>"
+        }
+      }
+    },
+    {
+      "id": "redact-extra-email",
+      "description": "pii_action=redact",
+      "config": {
+        "pii_action": "redact"
+      },
+      "declares": [
+        "resource_url",
+        "description",
+        "reason",
+        "extra"
+      ],
+      "input": {
+        "resource_url": "https://api.merchant.example/v1/invoice",
+        "description": "Monthly API access",
+        "reason": "subscription renewal",
+        "extra": {
+          "memo": "receipt to alice@example.com",
+          "order_id": "ord_8844"
+        }
+      },
+      "input_jcs": "{\"description\":\"Monthly API access\",\"extra\":{\"memo\":\"receipt to alice@example.com\",\"order_id\":\"ord_8844\"},\"reason\":\"subscription renewal\",\"resource_url\":\"https://api.merchant.example/v1/invoice\"}",
+      "input_jcs_sha256": "81cc31b737b0f330558e17d0f7a868a8d2a405169668ba9b038763ac82608ee1",
+      "expected": {
+        "verdict": "admit",
+        "entities": [
+          "EMAIL_ADDRESS"
+        ],
+        "mutations": {
+          "extra": {
+            "memo": "receipt to <REDACTED>",
+            "order_id": "ord_8844"
+          }
+        }
+      }
+    },
+    {
+      "id": "block-ssn",
+      "description": "pii_action=block",
+      "config": {
+        "pii_action": "block"
+      },
+      "declares": [
+        "resource_url",
+        "description",
+        "reason",
+        "extra"
+      ],
+      "input": {
+        "resource_url": "https://api.merchant.example/v1/invoice",
+        "description": "Payout for customer SSN 219-09-9999",
+        "reason": "vendor settlement",
+        "extra": {}
+      },
+      "input_jcs": "{\"description\":\"Payout for customer SSN 219-09-9999\",\"extra\":{},\"reason\":\"vendor settlement\",\"resource_url\":\"https://api.merchant.example/v1/invoice\"}",
+      "input_jcs_sha256": "bddd17534f2228e6490873c40262b6a478d29cdf7eabe37d9832b84e4ad3bdc2",
+      "expected": {
+        "verdict": "deny",
+        "reason": "PII detected: US_SSN",
+        "entities": [
+          "US_SSN"
+        ]
+      }
+    },
+    {
+      "id": "warn-clean-allows-but-flags",
+      "description": "pii_action=warn",
+      "config": {
+        "pii_action": "warn"
+      },
+      "declares": [
+        "resource_url",
+        "description",
+        "reason",
+        "extra"
+      ],
+      "input": {
+        "resource_url": "https://api.merchant.example/v1/invoice",
+        "description": "Contact support at admin@example.com",
+        "reason": "dispute",
+        "extra": {}
+      },
+      "input_jcs": "{\"description\":\"Contact support at admin@example.com\",\"extra\":{},\"reason\":\"dispute\",\"resource_url\":\"https://api.merchant.example/v1/invoice\"}",
+      "input_jcs_sha256": "1065dfe47f180f2743a37fc60e8a9154d6d72eeb86665e5cb67ede694b52aad7",
+      "expected": {
+        "verdict": "admit",
+        "entities": [
+          "EMAIL_ADDRESS"
+        ]
+      }
+    }
+  ]
+}
