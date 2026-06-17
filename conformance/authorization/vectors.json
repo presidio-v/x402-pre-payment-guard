@@ -1,0 +1,149 @@
+{
+  "suite": "pre-payment-guard-authorization-v1",
+  "plugin": "authorization (LemonCake Pay Token, HS256 JWT, stdlib verify)",
+  "vectors": [
+    {
+      "id": "valid-within-budget-admit",
+      "description": "valid token, spend within remaining budget",
+      "config": {
+        "secret": "pre-payment-guard-conformance-secret",
+        "revoked": []
+      },
+      "ctx": {
+        "now": 1700000000,
+        "effective_budget_remaining": 50.0
+      },
+      "declares": [
+        "amount_usd",
+        "payToken"
+      ],
+      "input": {
+        "amount_usd": 0.1,
+        "payToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidWRnZXRfdXNkIjo1MC4wLCJleHAiOjE3MDAwMDM2MDAsImp0aSI6InB0X3ZhbGlkXzAwMSJ9.Zc9EuHqCXVYNHlGYUU2qsvbsaAP3Lpnq2-zOHdZdpy8"
+      },
+      "input_jcs": "{\"amount_usd\":0.1,\"payToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidWRnZXRfdXNkIjo1MC4wLCJleHAiOjE3MDAwMDM2MDAsImp0aSI6InB0X3ZhbGlkXzAwMSJ9.Zc9EuHqCXVYNHlGYUU2qsvbsaAP3Lpnq2-zOHdZdpy8\"}",
+      "input_jcs_sha256": "fb0f120d84b67a3f45a757d1a66dac90ffb480ca026a78e1419ce74015fd7cdd",
+      "expected": {
+        "verdict": "admit"
+      }
+    },
+    {
+      "id": "expired-deny",
+      "description": "token past its exp claim",
+      "config": {
+        "secret": "pre-payment-guard-conformance-secret",
+        "revoked": []
+      },
+      "ctx": {
+        "now": 1700000000,
+        "effective_budget_remaining": 50.0
+      },
+      "declares": [
+        "amount_usd",
+        "payToken"
+      ],
+      "input": {
+        "amount_usd": 0.1,
+        "payToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidWRnZXRfdXNkIjo1MC4wLCJleHAiOjE2OTk5OTY0MDAsImp0aSI6InB0X2V4cGlyZWRfMDAyIn0.LSEUK9GjG5_HGyxh-JahgYSHgV4mK0QUmcKtbiTtpVs"
+      },
+      "input_jcs": "{\"amount_usd\":0.1,\"payToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidWRnZXRfdXNkIjo1MC4wLCJleHAiOjE2OTk5OTY0MDAsImp0aSI6InB0X2V4cGlyZWRfMDAyIn0.LSEUK9GjG5_HGyxh-JahgYSHgV4mK0QUmcKtbiTtpVs\"}",
+      "input_jcs_sha256": "66b113d79128bd45b745ec621e71abdd91ad891f7ce818131e3dbed414fd983e",
+      "expected": {
+        "verdict": "deny",
+        "reason": "pay token expired",
+        "entities": [
+          "token_state:expired"
+        ]
+      }
+    },
+    {
+      "id": "revoked-deny",
+      "description": "token jti present in the revocation set",
+      "config": {
+        "secret": "pre-payment-guard-conformance-secret",
+        "revoked": [
+          "pt_revoked_003"
+        ]
+      },
+      "ctx": {
+        "now": 1700000000,
+        "effective_budget_remaining": 50.0
+      },
+      "declares": [
+        "amount_usd",
+        "payToken"
+      ],
+      "input": {
+        "amount_usd": 0.1,
+        "payToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidWRnZXRfdXNkIjo1MC4wLCJleHAiOjE3MDAwMDM2MDAsImp0aSI6InB0X3Jldm9rZWRfMDAzIn0.CwOUlfChUj_plkKgV1dHJ5oQABWcnNMHS5C3nMEnwmo"
+      },
+      "input_jcs": "{\"amount_usd\":0.1,\"payToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidWRnZXRfdXNkIjo1MC4wLCJleHAiOjE3MDAwMDM2MDAsImp0aSI6InB0X3Jldm9rZWRfMDAzIn0.CwOUlfChUj_plkKgV1dHJ5oQABWcnNMHS5C3nMEnwmo\"}",
+      "input_jcs_sha256": "49c26edaf9ace7b30f43996ff7af3b374da8a80591551319d5edd09e14c18174",
+      "expected": {
+        "verdict": "deny",
+        "reason": "pay token has been revoked",
+        "entities": [
+          "token_state:revoked"
+        ]
+      }
+    },
+    {
+      "id": "bad-signature-deny",
+      "description": "token signed with a different secret",
+      "config": {
+        "secret": "pre-payment-guard-conformance-secret",
+        "revoked": []
+      },
+      "ctx": {
+        "now": 1700000000,
+        "effective_budget_remaining": 50.0
+      },
+      "declares": [
+        "amount_usd",
+        "payToken"
+      ],
+      "input": {
+        "amount_usd": 0.1,
+        "payToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidWRnZXRfdXNkIjo1MC4wLCJleHAiOjE3MDAwMDM2MDAsImp0aSI6InB0X3ZhbGlkXzAwMSJ9.FXtTbQQ6j4vt4Kp8BIuJ46EoRi3GZ_EThvHWOxWsZNs"
+      },
+      "input_jcs": "{\"amount_usd\":0.1,\"payToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidWRnZXRfdXNkIjo1MC4wLCJleHAiOjE3MDAwMDM2MDAsImp0aSI6InB0X3ZhbGlkXzAwMSJ9.FXtTbQQ6j4vt4Kp8BIuJ46EoRi3GZ_EThvHWOxWsZNs\"}",
+      "input_jcs_sha256": "814bf8fbef32e4626964412ec637f684526d044035ea347558b50fbd45b8289a",
+      "expected": {
+        "verdict": "deny",
+        "reason": "pay token rejected: signature does not verify",
+        "entities": [
+          "token_state:invalid_signature"
+        ]
+      }
+    },
+    {
+      "id": "budget-exceeded-deny",
+      "description": "valid token but spend exceeds ledger remaining",
+      "config": {
+        "secret": "pre-payment-guard-conformance-secret",
+        "revoked": []
+      },
+      "ctx": {
+        "now": 1700000000,
+        "effective_budget_remaining": 1.5
+      },
+      "declares": [
+        "amount_usd",
+        "payToken"
+      ],
+      "input": {
+        "amount_usd": 3.0,
+        "payToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidWRnZXRfdXNkIjo1MC4wLCJleHAiOjE3MDAwMDM2MDAsImp0aSI6InB0X3ZhbGlkXzAwMSJ9.Zc9EuHqCXVYNHlGYUU2qsvbsaAP3Lpnq2-zOHdZdpy8"
+      },
+      "input_jcs": "{\"amount_usd\":3.0,\"payToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidWRnZXRfdXNkIjo1MC4wLCJleHAiOjE3MDAwMDM2MDAsImp0aSI6InB0X3ZhbGlkXzAwMSJ9.Zc9EuHqCXVYNHlGYUU2qsvbsaAP3Lpnq2-zOHdZdpy8\"}",
+      "input_jcs_sha256": "8aafbbbd3de0450bc1facf52cba198a27701bc408f3cedf48e7f67f8150c4f86",
+      "expected": {
+        "verdict": "deny",
+        "reason": "spend 3.00 exceeds remaining budget 1.50",
+        "entities": [
+          "token_state:budget_exceeded"
+        ]
+      }
+    }
+  ]
+}

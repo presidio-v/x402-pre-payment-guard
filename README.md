@@ -14,7 +14,7 @@ two independent implementations, then propose it to the x402 Foundation.
 A single chokepoint, several orthogonal questions:
 
 - **payload** — what PII is in the metadata I'm about to send? *(this repo: presidio reference plugin)*
-- **authorization** — may I spend this, within budget, with a valid token? *(LemonCake reference plugin)*
+- **authorization** — may I spend this, within budget, with a valid token? *(this repo: LemonCake reference plugin)*
 - inbound-challenge, replay, mandate — same hook, more plugins.
 
 None subsumes the others; all want to run before signing. The interface lets each be a
@@ -33,27 +33,36 @@ not just admit/deny.
 ## Layout
 
 ```
-spec/pre-payment-guard.md          # the interface
-plugins/payload/                   # reference payload PII screen (complete)
-plugins/authorization/             # reference token/budget screen (placeholder — LemonCake)
-conformance/verify.py              # runner: re-run a plugin's vectors, assert byte-identical verdicts
-conformance/payload/vectors.json   # 5 payload vectors
+spec/pre-payment-guard.md                 # the interface
+plugins/payload/                          # reference payload PII screen (complete)
+plugins/authorization/                    # reference token/budget screen (complete — LemonCake)
+conformance/verify.py                     # runner: re-run a plugin's vectors, assert byte-identical verdicts
+conformance/payload/vectors.json          # 5 payload vectors
+conformance/authorization/vectors.json    # 5 authorization vectors
 ```
 
 ## Quickstart
 
 ```bash
-pip install presidio-hardened-x402
-PYTHONPATH=plugins/payload python conformance/verify.py
+# authorization suite — stdlib only, no install:
+PYTHONPATH=plugins/authorization python conformance/verify.py conformance/authorization/vectors.json
 # -> PASS: 5 vectors reproduced byte-identical
+
+# payload suite — needs the presidio reference plugin:
+pip install presidio-hardened-x402
+PYTHONPATH=plugins/payload python conformance/verify.py conformance/payload/vectors.json
 ```
+
+Run `python conformance/verify.py` with both plugin dirs on `PYTHONPATH` and no
+path arg to verify every suite at once; a suite whose plugin isn't importable is
+skipped, not failed.
 
 ## Status
 
 | Plugin | Owner | State |
 |---|---|---|
 | payload | presidio-v | complete — plugin + 5 conformance vectors |
-| authorization | LemonCake | placeholder — interface + a vector to follow |
+| authorization | LemonCake | complete — plugin + 5 conformance vectors |
 
-Contributions welcome, especially the authorization reference plugin aligned to the
-common verdict envelope. MIT.
+Two independent implementations now run behind one verdict envelope — the bar
+this repo set before proposing the interface to the x402 Foundation. MIT.
